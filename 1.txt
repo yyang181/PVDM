@@ -6,6 +6,7 @@ pip install natsort tqdm gdown omegaconf einops lpips pyspng tensorboard imageio
 rm -rf .torch_distributed_init # for multi gpu
 
 注意syncbatch不支持单卡，只能在集群上做测试
+大概需要49G显存 batch2 channel284 res128
 rm -rf results && CUDA_VISIBLE_DEVICES=0 python main.py --exp first_stage --id main_128 --pretrain_config configs/autoencoder/base.yaml --data UCF101 --batch_size 2
 
 多卡

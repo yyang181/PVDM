@@ -135,6 +135,8 @@ def latentDDPM(rank, first_stage_model, model, opt, criterion, train_loader, tes
 
 
 def first_stage_train(rank, model, opt, d_opt, criterion, train_loader, test_loader, first_model, fp, logger=None):
+    flag_MultiGPU = False
+
     if logger is None:
         log_ = print
     else:
@@ -165,8 +167,7 @@ def first_stage_train(rank, model, opt, d_opt, criterion, train_loader, test_loa
 
 
     model.train()
-    # disc_start = criterion.module.discriminator_iter_start
-    disc_start = criterion.discriminator_iter_start
+    disc_start = criterion.module.discriminator_iter_start if flag_MultiGPU else criterion.discriminator_iter_start
     
     for it, (x, _) in enumerate(train_loader):
 
@@ -218,8 +219,12 @@ def first_stage_train(rank, model, opt, d_opt, criterion, train_loader, test_loa
                 scaler_d.unscale_(d_opt)
 
                 # Since the gradients of optimizer's assigned params are unscaled, clips as usual:
-                torch.nn.utils.clip_grad_norm_(criterion.module.discriminator_2d.parameters(), 1.0)
-                torch.nn.utils.clip_grad_norm_(criterion.module.discriminator_3d.parameters(), 1.0)
+                if flag_MultiGPU:
+                    torch.nn.utils.clip_grad_norm_(criterion.module.discriminator_2d.parameters(), 1.0)
+                    torch.nn.utils.clip_grad_norm_(criterion.module.discriminator_3d.parameters(), 1.0)  
+                else:
+                    torch.nn.utils.clip_grad_norm_(criterion.discriminator_2d.parameters(), 1.0)
+                    torch.nn.utils.clip_grad_norm_(criterion.discriminator_3d.parameters(), 1.0)
 
                 scaler_d.step(d_opt)
                 scaler_d.update()
@@ -244,8 +249,15 @@ def first_stage_train(rank, model, opt, d_opt, criterion, train_loader, test_loa
                 log_('[Time %.3f] [AELoss %f] [DLoss %f] [PSNR %f]' %
                      (time.time() - check, losses['ae_loss'].average, losses['d_loss'].average, psnr))
 
-                torch.save(model.module.state_dict(), rootdir + f'model_last.pth')
-                torch.save(criterion.module.state_dict(), rootdir + f'loss_last.pth')
+                if flag_MultiGPU:
+                    torch.save(model.module.state_dict(), rootdir + f'model_last.pth')
+                    torch.save(criterion.module.state_dict(), rootdir + f'loss_last.pth')
+                else:
+                    torch.save(model.state_dict(), rootdir + f'model_last.pth')
+                    torch.save(criterion.state_dict(), rootdir + f'loss_last.pth')
+                # torch.save(model.module.state_dict(), rootdir + f'model_last.pth')
+                # torch.save(criterion.module.state_dict(), rootdir + f'loss_last.pth')
+
                 torch.save(opt.state_dict(), rootdir + f'opt.pth')
                 torch.save(d_opt.state_dict(), rootdir + f'd_opt.pth')
                 torch.save(scaler.state_dict(), rootdir + f'scaler.pth')
@@ -256,5 +268,8 @@ def first_stage_train(rank, model, opt, d_opt, criterion, train_loader, test_loa
             losses['d_loss'] = AverageMeter()
 
         if it % 2000 == 0 and rank == 0:
-            torch.save(model.module.state_dict(), rootdir + f'model_{it}.pth')
+            if flag_MultiGPU:
+                torch.save(model.module.state_dict(), rootdir + f'model_{it}.pth')
+            else:
+                torch.save(model.state_dict(), rootdir + f'model_{it}.pth')
 
