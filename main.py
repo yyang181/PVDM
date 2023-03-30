@@ -47,7 +47,7 @@ def main():
     args.n_gpus = torch.cuda.device_count()
 
     # init and save configs
-    
+
     """ RUN THE EXP """
     if args.exp == 'ddpm':
         config = OmegaConf.load(args.diffusion_config)

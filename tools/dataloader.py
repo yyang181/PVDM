@@ -20,7 +20,7 @@ from torchvision.datasets.folder import make_dataset
 from tools.video_utils import VideoClips
 from torchvision.io import read_video
 
-data_location = '/data'
+data_location = '/home/yyang181/data/'
 from utils import set_random_seed
 from tools.data_utils import *
 

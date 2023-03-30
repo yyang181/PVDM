@@ -165,7 +165,8 @@ def first_stage_train(rank, model, opt, d_opt, criterion, train_loader, test_loa
 
 
     model.train()
-    disc_start = criterion.module.discriminator_iter_start
+    # disc_start = criterion.module.discriminator_iter_start
+    disc_start = criterion.discriminator_iter_start
     
     for it, (x, _) in enumerate(train_loader):
 
