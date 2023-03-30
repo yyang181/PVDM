@@ -104,6 +104,9 @@ class ViTAutoencoder(nn.Module):
         if self.res == 128:
             patch_size = 4
         self.down = 3
+        #need to set to 2 when img_size=128
+        if self.res == 128:
+            self.down = 2
 
         self.encoder = TimeSformerEncoder(dim=ddconfig["channels"],
                                    image_size=ddconfig["resolution"],
